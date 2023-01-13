@@ -31,9 +31,8 @@ class CalcCrr:
         self.avg_watts = avg_watts
 
     def calc_mass_eff(self):
-
-        mass_front = self.rider_mass_kg * ((100 - self.rear_mass_percent) / 100)
-        mass_rear = self.rider_mass_kg - mass_front
+        mass_rear = self.rider_mass_kg * (self.rear_mass_percent / 100)
+        mass_front = self.rider_mass_kg - mass_rear
         mass_eff = mass_front + (
             mass_rear
             / math.cos(
@@ -42,6 +41,7 @@ class CalcCrr:
                 )
             )
         )
+        print(f"mass eff {mass_eff}")
         return mass_eff
 
     def calc_crr(self):
@@ -50,8 +50,10 @@ class CalcCrr:
         mass_eff_kg = self.calc_mass_eff()
 
         seconds_total = (((self.hours * 60) + self.minutes) * 60) + self.seconds
+        print(f"seconds total {seconds_total}")
 
         v_drum_ms = self.distance_meters / seconds_total
+        print(f"v_drum_ms {v_drum_ms}")
         crr = (self.avg_watts / (v_drum_ms * mass_eff_kg * g)) * math.pow(
             (1 / (1 + self.dia_wheel_mm / self.dia_drum_mm)), 0.7
         )
@@ -60,7 +62,21 @@ class CalcCrr:
 
 def add_to_csv(tire_file_name, a_row):
 
-    header_row = ["rider_mass_kg",  "rear_mass_percent",  "dia_wheel_mm",  "dia_drum_mm","hours","minutes","seconds","distance_meters","roller_spread_mm","avg_watts","tire_pressure_psi","tire_name","Crr"]
+    header_row = [
+        "rider_mass_kg",
+        "rear_mass_percent",
+        "dia_wheel_mm",
+        "dia_drum_mm",
+        "hours",
+        "minutes",
+        "seconds",
+        "distance_meters",
+        "roller_spread_mm",
+        "avg_watts",
+        "tire_pressure_psi",
+        "tire_name",
+        "Crr",
+    ]
     add_header = False
     if not exists(tire_file_name):
         add_header = True
@@ -79,8 +95,8 @@ def main():
     parser.add_argument(
         "--roller_spread_mm",
         type=int,
-        help="Distance center to center of the rear rollers. Default 267",
-        default=267,
+        help="Distance center to center of the rear rollers. Default 257",
+        default=257,
         required=False,
     )
     parser.add_argument(

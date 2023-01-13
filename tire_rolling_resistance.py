@@ -1,9 +1,23 @@
 import math
 import argparse
+import csv
+from os.path import exists
 
 
 class CalcCrr:
-    def __init__(self, rider_mass_kg, rear_mass_percent, dia_wheel_mm, dia_drum_mm, hours, minutes, seconds, distance_meters, roller_spread_mm, avg_watts):
+    def __init__(
+        self,
+        rider_mass_kg,
+        rear_mass_percent,
+        dia_wheel_mm,
+        dia_drum_mm,
+        hours,
+        minutes,
+        seconds,
+        distance_meters,
+        roller_spread_mm,
+        avg_watts,
+    ):
         super().__init__()
         self.rider_mass_kg = rider_mass_kg
         self.rear_mass_percent = rear_mass_percent
@@ -23,7 +37,9 @@ class CalcCrr:
         mass_eff = mass_front + (
             mass_rear
             / math.cos(
-                math.asin(self.roller_spread_mm / (self.dia_wheel_mm + self.dia_drum_mm))
+                math.asin(
+                    self.roller_spread_mm / (self.dia_wheel_mm + self.dia_drum_mm)
+                )
             )
         )
         return mass_eff
@@ -42,8 +58,20 @@ class CalcCrr:
         return crr
 
 
+def add_to_csv(tire_file_name, a_row):
+
+    header_row = ["rider_mass_kg",  "rear_mass_percent",  "dia_wheel_mm",  "dia_drum_mm","hours","minutes","seconds","distance_meters","roller_spread_mm","avg_watts","tire_pressure_psi","tire_name","Crr"]
+    add_header = False
+    if not exists(tire_file_name):
+        add_header = True
+    with open(tire_file_name, "a") as csvfile:
+        tire_writer = csv.writer(csvfile)
+        if add_header:
+            tire_writer.writerow(header_row)
+        tire_writer.writerow(a_row)
+
+
 def main():
-    print("Calc Crr")
 
     parser = argparse.ArgumentParser(
         description="Calculate Crr from roller, power, and distance"
@@ -97,10 +125,20 @@ def main():
     parser.add_argument(
         "--avg_watts", type=int, help="Average wattage for duration.", required=True
     )
+    parser.add_argument(
+        "--tire_pressure_psi",
+        type=int,
+        help="Tire pressure in psi...for recording purposes only",
+        required=True,
+    )
+    parser.add_argument(
+        "--tire_name",
+        help="Name of tire with size. Eg Challenge Strada Bianca 700x36",
+        required=True,
+    )
     args = parser.parse_args()
 
     roller_spread_mm = args.roller_spread_mm
-    print(f"roller spread mm {roller_spread_mm}")
     rider_mass_kg = args.rider_mass_kg
     rear_mass_percent = args.rear_mass_percent
     dia_wheel_mm = args.dia_wheel_mm
@@ -112,10 +150,46 @@ def main():
     seconds = int(seconds_str)
     distance_meters = args.distance_meters
     avg_watts = args.avg_watts
+    tire_pressure_psi = args.tire_pressure_psi
+    tire_name = args.tire_name
 
-    c = CalcCrr(rider_mass_kg, rear_mass_percent, dia_wheel_mm, dia_drum_mm, hours, minutes, seconds, distance_meters, roller_spread_mm, avg_watts)
+    c = CalcCrr(
+        rider_mass_kg,
+        rear_mass_percent,
+        dia_wheel_mm,
+        dia_drum_mm,
+        hours,
+        minutes,
+        seconds,
+        distance_meters,
+        roller_spread_mm,
+        avg_watts,
+    )
     crr = c.calc_crr()
-    print(f"Crr is {crr}")
+    print(
+        f"rider_mass_kg,  rear_mass_percent,  dia_wheel_mm,   dia_drum_mm,  hours,  minutes,  seconds,  distance_meters,  roller_spread_mm,  avg_watts,  tire_pressure_psi,  tire_name,  Crr"
+    )
+    print(
+        f"{rider_mass_kg},{rear_mass_percent},{dia_wheel_mm}, {dia_drum_mm},{hours},{minutes},{seconds},{distance_meters},{roller_spread_mm},{avg_watts},{tire_pressure_psi},{tire_name},{crr}"
+    )
+    add_to_csv(
+        "tire_data.csv",
+        [
+            rider_mass_kg,
+            rear_mass_percent,
+            dia_wheel_mm,
+            dia_drum_mm,
+            hours,
+            minutes,
+            seconds,
+            distance_meters,
+            roller_spread_mm,
+            avg_watts,
+            tire_pressure_psi,
+            tire_name,
+            crr,
+        ],
+    )
 
 
 if __name__ == "__main__":

@@ -3,20 +3,18 @@ import argparse
 
 
 class CalcCrr:
-    def __init__(
-        self, rider_mass_kg, rear_mass_percent, dia_wheel_mm, dia_drum_mm
-    ):
+    def __init__(self, rider_mass_kg, rear_mass_percent, dia_wheel_mm, dia_drum_mm, hours, minutes, seconds, distance_meters, roller_spread_mm, avg_watts):
         super().__init__()
         self.rider_mass_kg = rider_mass_kg
         self.rear_mass_percent = rear_mass_percent
         self.dia_wheel_mm = dia_wheel_mm
         self.dia_drum_mm = dia_drum_mm
-        self.hours = 1
-        self.minutes = 0
-        self.seconds = 0
-        self.distance_km = 40
-        self.roller_spread = 20
-        self.p_drum_watts = 281
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds = seconds
+        self.distance_meters = distance_meters
+        self.roller_spread_mm = roller_spread_mm
+        self.avg_watts = avg_watts
 
     def calc_mass_eff(self):
 
@@ -25,7 +23,7 @@ class CalcCrr:
         mass_eff = mass_front + (
             mass_rear
             / math.cos(
-                math.asin(self.roller_spread / (self.dia_wheel_mm + self.dia_drum_mm))
+                math.asin(self.roller_spread_mm / (self.dia_wheel_mm + self.dia_drum_mm))
             )
         )
         return mass_eff
@@ -35,11 +33,10 @@ class CalcCrr:
 
         mass_eff_kg = self.calc_mass_eff()
 
-        distance_m = self.distance_km * 1000
         seconds_total = (((self.hours * 60) + self.minutes) * 60) + self.seconds
 
-        v_drum_ms = distance_m / seconds_total
-        crr = (self.p_drum_watts / (v_drum_ms * mass_eff_kg * g)) * math.pow(
+        v_drum_ms = self.distance_meters / seconds_total
+        crr = (self.avg_watts / (v_drum_ms * mass_eff_kg * g)) * math.pow(
             (1 / (1 + self.dia_wheel_mm / self.dia_drum_mm)), 0.7
         )
         return crr
@@ -54,15 +51,15 @@ def main():
     parser.add_argument(
         "--roller_spread_mm",
         type=int,
-        help="Distance center to center of the rear rollers. Default 40",
-        default=40,
+        help="Distance center to center of the rear rollers. Default 267",
+        default=267,
         required=False,
     )
     parser.add_argument(
         "--rider_mass_kg",
         type=int,
-        help="Weight of rider + bike + etc in kilograms. Default 93.",
-        default=93,
+        help="Weight of rider + bike + etc in kilograms. Default 103.",
+        default=103,
         required=False,
     )
     parser.add_argument(
@@ -82,8 +79,8 @@ def main():
     parser.add_argument(
         "--dia_drum_mm",
         type=int,
-        help="Diameter of the roller drums in mm. Default 114 (4.5 inch Kreitler)",
-        default=114,
+        help="Diameter of the roller drums in mm. Default 85 (Travel Track Alloy)",
+        default=85,
         required=False,
     )
     parser.add_argument(
@@ -98,7 +95,7 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--avg_wattage", type=int, help="Average wattage for duration.", required=True
+        "--avg_watts", type=int, help="Average wattage for duration.", required=True
     )
     args = parser.parse_args()
 
@@ -109,11 +106,14 @@ def main():
     dia_wheel_mm = args.dia_wheel_mm
     dia_drum_mm = args.dia_drum_mm
     hms = args.hms
-    (hours, minutes, seconds) = hms.split(":")
+    (hours_str, minutes_str, seconds_str) = hms.split(":")
+    hours = int(hours_str)
+    minutes = int(minutes_str)
+    seconds = int(seconds_str)
     distance_meters = args.distance_meters
-    avg_wattage = args.avg_wattage
+    avg_watts = args.avg_watts
 
-    c = CalcCrr(
+    c = CalcCrr(rider_mass_kg, rear_mass_percent, dia_wheel_mm, dia_drum_mm, hours, minutes, seconds, distance_meters, roller_spread_mm, avg_watts)
     crr = c.calc_crr()
     print(f"Crr is {crr}")
 
